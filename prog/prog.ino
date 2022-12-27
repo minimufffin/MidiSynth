@@ -1,14 +1,26 @@
-#define BAUDRATE 9600   // change to midi baud rate
+#define BAUDRATE 31250   // change to midi baud rate
 
 // status messages (without midi channel)
 #define NOTEON 0x90
 #define NOTEOFF 0x80
 
+#define SPKRPIN 2
+
 int runningStatus = 0;      // last midi status byte
+int currentNote = -1;       // tone being played
+
+struct message
+{
+  char status;
+  char data1;
+  char data2;
+};
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(BAUDRATE);
+
+  pinMode(SPKRPIN, OUTPUT);
 }
 
 void printByte(int byte)
@@ -20,19 +32,22 @@ void printByte(int byte)
   }
 }
 
-void readMessage(int firstByte)
+struct message readNoteMessage(int firstByte)
 {
   int noteValue;
   int noteVelocity;
-  if (runningStatus & 0xF0 == NOTEON || runningStatus & 0xF0 == NOTEOFF)
-  {
-    delay(1);   // make sure that the full midi message goes through
-    if (firstByte == runningStatus)
-      noteValue = Serial.read();
-    else
-      noteValue = firstByte;
-    noteVelocity = Serial.read();
-  }
+  delay(1);   // make sure that the full midi message goes through
+  if (firstByte == runningStatus)
+    noteValue = Serial.read();
+  else
+    noteValue = firstByte;
+  noteVelocity = Serial.read();
+
+  struct message msg;
+  msg.status = runningStatus;
+  msg.data1 = noteValue;
+  msg.data2 = noteVelocity;
+  return msg;
 }
 
 void loop() {
@@ -53,8 +68,23 @@ void loop() {
       runningStatus = incomingByte;
   }
 
+  struct message *msg = NULL;
   // at this point if byte is not -1, we can read a full message
   if (incomingByte > 0)
-    readMessage(incomingByte);
+  {
+    (*msg) = readNoteMessage(incomingByte);
+  }
 
+  if (msg)
+  {
+    if (msg->status & 0xF0 == NOTEON)
+    {
+      int freq = pow(2, (msg->data1-69)/12.0) * 440;
+      noTone(SPKRPIN);
+      tone(SPKRPIN, freq);
+      currentNote = msg->data1;
+    }
+    else if (msg->status & 0xF0 == NOTEOFF && msg->data1 == currentNote)
+      noTone(SPKRPIN);
+  }
 }
