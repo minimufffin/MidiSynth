@@ -4,7 +4,6 @@
 #define NOTEON 0x90
 #define NOTEOFF 0x80
 
-int incomingByte = 0;       // byte sent from midi controller
 int runningStatus = 0;      // last midi status byte
 
 void setup() {
@@ -17,7 +16,7 @@ void printByte(int byte)
   if (byte > 0)
   {
     Serial.println("Recieved: 0x");
-    Serial.println(incomingByte, HEX);
+    Serial.println(byte, HEX);
   }
 }
 
@@ -40,7 +39,7 @@ void loop() {
   // put your main code here, to run repeatedly:
 
   // First, read a byte for next message
-  incomingByte = Serial.read();
+  int incomingByte = Serial.read();
   printByte(incomingByte);
   if (incomingByte > 0 && incomingByte & 0x80)
     runningStatus = incomingByte; // update status byte
