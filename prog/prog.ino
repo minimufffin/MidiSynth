@@ -85,6 +85,9 @@ void loop() {
       currentNote = msg->data1;
     }
     else if (msg->status & 0xF0 == NOTEOFF && msg->data1 == currentNote)
+    {
+      currentNote = -1;
       noTone(SPKRPIN);
+    }
   }
 }
