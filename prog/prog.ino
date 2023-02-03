@@ -25,9 +25,9 @@ void setup() {
 
 void printByte(int byte)
 {
-  if (byte > 0)
+  if (byte > 0 && byte != 0xf8 && byte != 0xfe)
   {
-    Serial.println("Recieved: 0x");
+    Serial.print("Recieved: 0x");
     Serial.println(byte, HEX);
   }
 }
@@ -38,10 +38,14 @@ struct message readNoteMessage(int firstByte)
   int noteVelocity;
   delay(1);   // make sure that the full midi message goes through
   if (firstByte == runningStatus)
+  {
     noteValue = Serial.read();
+    printByte(noteValue);
+  }
   else
     noteValue = firstByte;
   noteVelocity = Serial.read();
+  printByte(noteValue);
 
   struct message msg;
   msg.status = runningStatus;
